@@ -9,6 +9,8 @@ node('jenkins-slave') {
         fileExists '${PRE_CONFIGURE}'
           sh """
               ${PRE_CONFIGURE}
+			pwd
+			ls -lai
           """
     }
     stage('Build') {
