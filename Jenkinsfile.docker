@@ -1,29 +1,29 @@
 node('jenkins-slave') {
     timestamps {
       def app
-        stage("[[Checkout]]") {
+        stage("[Checkout]") {
           checkout scm
           checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: '${GIT_SOURCE_URL}']]])
         }
-        stage('[[PreConfigure]]') {
+        stage('[PreConfigure]') {
           fileExists '${PRE_CONFIGURE}'
             sh """
                 ${PRE_CONFIGURE}
             """
         }
-        stage('[[Build]]') {
+        stage('[Build]') {
           if (params.CHANNEL != '') {
             rocketSend channel: "#${CHANNEL}",
             message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] Docker Images Build Started. "
           }
           app = docker.build("${DOCKER_BASE_URL}/${DOCKER_IMAGE_NAME}", "-f ${DOCKER_FILE_PATH} .")
         }
-        stage('[[Test]]') {
+        stage('[Test]') {
           app.inside {
             sh 'echo "Tests passed"'
           }
         }
-        stage('[[Push]]') {
+        stage('[Push]') {
           if (params.CHANNEL != '') {
             rocketSend channel: "#${CHANNEL}",
             message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] Docker Images Push Registry ${DOCKER_BASE_URL}/${DOCKER_IMAGE_NAME} "
@@ -33,7 +33,7 @@ node('jenkins-slave') {
             app.push("latest")
           }
         }
-        stage('[[Scan]]'){
+        stage('[Scan]'){
           withCredentials([usernamePassword(credentialsId: "${DOCKER_ACCOUNT_CREDENTIALS}",passwordVariable: 'PASSWORD',usernameVariable: 'USER')]) {
             sh """
             curl -u "${USER}":"${PASSWORD}" -X POST \
@@ -44,6 +44,7 @@ node('jenkins-slave') {
             rocketSend channel: "#${CHANNEL}",
             message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] ALL Done"
           }
+          cleanWs()
         }
     }
 }
