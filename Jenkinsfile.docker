@@ -2,7 +2,7 @@ node('jenkins-slave') {
     timestamps {
       def app
         stage("[Checkout]") {
-          checkout scm
+#checkout scm
           checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: '${GIT_SOURCE_URL}']]])
         }
         stage('[PreConfigure]') {
