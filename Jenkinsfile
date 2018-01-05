@@ -3,6 +3,7 @@ node('jenkins-slave') {
     def app
     stage('Checkout') {
         checkout scm
+        checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: '${GIT_SOURCE_URL}']]])
     }
     stage('PreConfigure') {
         fileExists '${PRE_CONFIGURE}'
