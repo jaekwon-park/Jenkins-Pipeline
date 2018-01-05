@@ -1,42 +1,44 @@
 node('jenkins-slave') {
-  timestamps {
-    def app
-    stage('Checkout') {
-        checkout scm
-        checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: '${GIT_SOURCE_URL}']]])
-    }
-    stage('PreConfigure') {
-        fileExists '${PRE_CONFIGURE}'
-          sh """
-              ${PRE_CONFIGURE}
-          """
-    }
-    stage('Build') {
-          app = docker.build("${DOCKER_BASE_URL}/${DOCKER_IMAGE_NAME}", "-f ${DOCKER_FILE_PATH} .")
-    }
-
-    stage('Test') {
-
-        app.inside {
-            sh 'echo "Tests passed"'
+    timestamps {
+      def app
+        stage("[[Checkout]]") {
+          checkout scm
+          checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: '${GIT_SOURCE_URL}']]])
         }
-    }
-
-    stage('Push') {
-        withDockerRegistry([uri: '${DOCKER_BASE_URL}',credentialsId: "${DOCKER_ACCOUNT_CREDENTIALS}"]) {
+        stage('[[PreConfigure]]') {
+          fileExists '${PRE_CONFIGURE}'
+            sh """
+                ${PRE_CONFIGURE}
+            """
+        }
+        stage('[[Build]]') {
+          rocketSend channel: "#${CHANNEL}",
+          message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] Docker Images Build Started. "
+          app = docker.build("${DOCKER_BASE_URL}/${DOCKER_IMAGE_NAME}", "-f ${DOCKER_FILE_PATH} .")
+        }
+        stage('[[Test]]') {
+          app.inside {
+            sh 'echo "Tests passed"'
+          }
+        }
+        stage('[[Push]]') {
+          rocketSend channel: "#${CHANNEL}",
+          message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] Docker Images Push Registry ${DOCKER_BASE_URL}/${DOCKER_IMAGE_NAME} "
+          withDockerRegistry([uri: '${DOCKER_BASE_URL}',credentialsId: "${DOCKER_ACCOUNT_CREDENTIALS}"]) {
             app.push("${env.BUILD_NUMBER}")
             app.push("latest")
+          }
         }
-    }
-
-    stage('Scan'){
+        stage('[[Scan]]'){
           withCredentials([usernamePassword(credentialsId: "${DOCKER_ACCOUNT_CREDENTIALS}",passwordVariable: 'PASSWORD',usernameVariable: 'USER')]) {
             sh """
             curl -u "${USER}":"${PASSWORD}" -X POST \
             https://${DOCKER_BASE_URL}/api/repositories/${DOCKER_IMAGE_NAME}/tags/latest/scan -i
             """
           }
+          rocketSend channel: "#${CHANNEL}",
+          message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] ALL Done""
+        }
     }
-  }
 }
 
