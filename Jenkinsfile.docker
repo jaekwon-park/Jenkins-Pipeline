@@ -12,8 +12,10 @@ node('jenkins-slave') {
             """
         }
         stage('[[Build]]') {
-          rocketSend channel: "#${CHANNEL}",
-          message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] Docker Images Build Started. "
+          if (params.CHANNEL != '') {
+            rocketSend channel: "#${CHANNEL}",
+            message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] Docker Images Build Started. "
+          }
           app = docker.build("${DOCKER_BASE_URL}/${DOCKER_IMAGE_NAME}", "-f ${DOCKER_FILE_PATH} .")
         }
         stage('[[Test]]') {
@@ -22,8 +24,10 @@ node('jenkins-slave') {
           }
         }
         stage('[[Push]]') {
-          rocketSend channel: "#${CHANNEL}",
-          message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] Docker Images Push Registry ${DOCKER_BASE_URL}/${DOCKER_IMAGE_NAME} "
+          if (params.CHANNEL != '') {
+            rocketSend channel: "#${CHANNEL}",
+            message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] Docker Images Push Registry ${DOCKER_BASE_URL}/${DOCKER_IMAGE_NAME} "
+          }
           withDockerRegistry([uri: '${DOCKER_BASE_URL}',credentialsId: "${DOCKER_ACCOUNT_CREDENTIALS}"]) {
             app.push("${env.BUILD_NUMBER}")
             app.push("latest")
@@ -36,8 +40,10 @@ node('jenkins-slave') {
             https://${DOCKER_BASE_URL}/api/repositories/${DOCKER_IMAGE_NAME}/tags/latest/scan -i
             """
           }
-          rocketSend channel: "#${CHANNEL}",
-          message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] ALL Done"
+          if (params.CHANNEL != '') {
+            rocketSend channel: "#${CHANNEL}",
+            message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] ALL Done"
+          }
         }
     }
 }
