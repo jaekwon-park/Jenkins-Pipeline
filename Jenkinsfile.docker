@@ -37,7 +37,7 @@ node('jenkins-slave') {
             """
           }
           rocketSend channel: "#${CHANNEL}",
-          message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] ALL Done""
+          message: "[JobNumber:${DOCKER_IMAGE_NAME}-${env.BUILD_NUMBER}] ALL Done"
         }
     }
 }
